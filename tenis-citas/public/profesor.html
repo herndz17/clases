@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mi agenda · Profesor de tenis</title>
+<style>
+  :root {
+    --bg: #f3f0e6;
+    --card: #ffffff;
+    --verde: #1f6b45;
+    --verde-oscuro: #154d31;
+    --pelota: #d7e84a;
+    --arcilla: #c8643c;
+    --texto: #1d2a22;
+    --suave: #66756b;
+    --borde: #dcd8c9;
+    --error: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--texto); line-height: 1.45;
+  }
+  header { background: var(--verde); color: #fff; padding: 22px 16px 54px; text-align: center; }
+  header h1 { margin: 0; font-size: 1.5rem; }
+  .pelota {
+    display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--pelota); margin-right: 8px; vertical-align: middle;
+  }
+  main { max-width: 640px; margin: -34px auto 40px; padding: 0 16px; }
+  .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 6px 24px rgba(20,50,35,.10); }
+  [hidden] { display: none !important; }
+
+  input[type=password], input[type=date] {
+    width: 100%; padding: 11px 12px; font: inherit; border: 1.5px solid var(--borde); border-radius: 10px;
+  }
+  button { font: inherit; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 3px solid rgba(31,107,69,.35); outline-offset: 1px; }
+  .principal {
+    width: 100%; margin-top: 12px; padding: 13px; font-weight: 700; background: var(--verde); color: #fff;
+    border: 0; border-radius: 12px;
+  }
+  .principal:hover { background: var(--verde-oscuro); }
+  .error { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #fde9e7; color: var(--error); border: 1px solid #f3c2bd; }
+
+  .nav { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .nav button {
+    padding: 10px 14px; border: 1.5px solid var(--borde); background: #fff; border-radius: 10px; font-weight: 600;
+  }
+  .nav button:hover { border-color: var(--verde); }
+  .nav input { flex: 1; min-width: 0; }
+
+  h2 { margin: 6px 0 2px; font-size: 1.25rem; }
+  .sub { color: var(--suave); margin: 0 0 16px; }
+  .vacio { text-align: center; padding: 28px 8px; color: var(--suave); }
+
+  .clase {
+    display: grid; grid-template-columns: 92px 1fr; gap: 14px; padding: 14px 0;
+    border-top: 1px solid var(--borde);
+  }
+  .clase:first-of-type { border-top: 0; }
+  .tiempo { text-align: center; }
+  .tiempo .ini { font-size: 1.35rem; font-weight: 800; color: var(--verde); }
+  .tiempo .fin { color: var(--suave); font-size: .9rem; }
+  .tiempo .dur {
+    display: inline-block; margin-top: 4px; padding: 2px 9px; border-radius: 999px;
+    background: #eef6d0; font-size: .8rem; font-weight: 600;
+  }
+  .nombre { font-weight: 700; font-size: 1.1rem; }
+  .notas { color: var(--suave); margin: 4px 0 0; font-size: .92rem; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .acciones a, .acciones button {
+    padding: 7px 12px; border-radius: 9px; font-size: .88rem; font-weight: 600; text-decoration: none;
+    border: 1.5px solid var(--borde); background: #fff; color: var(--texto);
+  }
+  .acciones a:hover { border-color: var(--verde); }
+  .acciones .cancelar { color: var(--error); }
+  .acciones .cancelar:hover { border-color: var(--error); }
+  .pie { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; color: var(--suave); font-size: .85rem; }
+  .pie button { border: 0; background: none; color: var(--verde); text-decoration: underline; padding: 0; }
+  @media (max-width: 420px) { .clase { grid-template-columns: 76px 1fr; gap: 10px; } }
+</style>
+</head>
+<body>
+<header><h1><span class="pelota"></span>Mi agenda de clases</h1></header>
+
+<main>
+  <!-- Entrada con PIN -->
+  <section class="card" id="login" hidden>
+    <h2>Entrar</h2>
+    <p class="sub">Escribe tu PIN de profesor.</p>
+    <form id="formLogin">
+      <input type="password" id="pin" inputmode="numeric" autocomplete="current-password" aria-label="PIN" required>
+      <button class="principal" type="submit">Ver mis clases</button>
+    </form>
+    <div class="error" id="errorLogin" role="alert" hidden></div>
+  </section>
+
+  <!-- Agenda -->
+  <section class="card" id="agenda" hidden>
+    <div class="nav">
+      <button type="button" id="ayer" aria-label="Día anterior">‹</button>
+      <input type="date" id="fecha" aria-label="Elegir día">
+      <button type="button" id="hoy">Hoy</button>
+      <button type="button" id="manana" aria-label="Día siguiente">›</button>
+    </div>
+    <h2 id="titulo"></h2>
+    <p class="sub" id="resumen"></p>
+    <div id="lista"></div>
+    <div class="error" id="error" role="alert" hidden></div>
+    <div class="pie">
+      <span id="actualizado"></span>
+      <button type="button" id="salir">Cerrar sesión</button>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  let pin = sessionStorage.getItem('pin') || '';
+  let hoy = null;
+  let fecha = null;
+  let temporizador = null;
+
+  const hhmmAMin = (h) => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
+  const textoDur = (d) => {
+    const h = Math.floor(d / 60), m = d % 60;
+    return (h ? h + ' h' : '') + (h && m ? ' ' : '') + (m ? m + ' min' : '');
+  };
+  const fechaLarga = (f) => {
+    const t = new Date(f + 'T00:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+  const sumarDias = (f, n) => {
+    const d = new Date(f + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  const el = (tag, clase, texto) => {
+    const e = document.createElement(tag);
+    if (clase) e.className = clase;
+    if (texto !== undefined) e.textContent = texto;
+    return e;
+  };
+
+  async function api(url, opts) {
+    opts = opts || {};
+    const r = await fetch(url, Object.assign({}, opts, {
+      headers: Object.assign({ 'Content-Type': 'application/json', 'x-pin': pin }, opts.headers || {}),
+    }));
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 401) { salir('PIN incorrecto.'); throw new Error('PIN incorrecto'); }
+    if (!r.ok) throw new Error(data.error || 'Ocurrió un error.');
+    return data;
+  }
+
+  function mostrarLogin(msg) {
+    $('#agenda').hidden = true;
+    $('#login').hidden = false;
+    const e = $('#errorLogin');
+    e.hidden = !msg;
+    e.textContent = msg || '';
+    $('#pin').focus();
+  }
+
+  function salir(msg) {
+    clearInterval(temporizador);
+    pin = '';
+    sessionStorage.removeItem('pin');
+    mostrarLogin(msg);
+  }
+
+  function telefonoWa(tel) {
+    let d = tel.replace(/\D/g, '');
+    if (d.length === 8) d = '503' + d; // El Salvador
+    return d;
+  }
+
+  function pintar(data) {
+    $('#titulo').textContent = fechaLarga(data.fecha) + (data.fecha === hoy ? ' (hoy)' : '');
+    const total = data.clases.reduce((s, c) => s + c.duracion, 0);
+    $('#resumen').textContent = data.clases.length
+      ? `${data.clases.length} ${data.clases.length === 1 ? 'clase' : 'clases'} · ${textoDur(total)} en total`
+      : '';
+    const lista = $('#lista');
+    lista.innerHTML = '';
+    if (!data.clases.length) {
+      lista.appendChild(el('div', 'vacio', 'No tienes clases este día.'));
+    }
+    data.clases.forEach((c) => {
+      const fila = el('div', 'clase');
+      const t = el('div', 'tiempo');
+      t.append(el('div', 'ini', c.hora), el('div', 'fin', 'a ' + c.fin), el('span', 'dur', textoDur(c.duracion)));
+      const info = el('div');
+      info.appendChild(el('div', 'nombre', c.nombre));
+      if (c.notas) info.appendChild(el('p', 'notas', c.notas));
+      const acc = el('div', 'acciones');
+      const llamar = el('a', '', '📞 ' + c.telefono);
+      llamar.href = 'tel:' + c.telefono.replace(/[^\d+]/g, '');
+      const wa = el('a', '', 'WhatsApp');
+      wa.href = 'https://wa.me/' + telefonoWa(c.telefono);
+      wa.target = '_blank'; wa.rel = 'noopener';
+      const cancelar = el('button', 'cancelar', 'Cancelar clase');
+      cancelar.type = 'button';
+      cancelar.addEventListener('click', () => cancelarClase(c));
+      acc.append(llamar, wa, cancelar);
+      info.appendChild(acc);
+      fila.append(t, info);
+      lista.appendChild(fila);
+    });
+    $('#actualizado').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function cargar() {
+    $('#error').hidden = true;
+    try {
+      const data = await api('/api/profesor/clases?fecha=' + encodeURIComponent(fecha));
+      pintar(data);
+    } catch (e) {
+      if (!$('#agenda').hidden) { $('#error').textContent = e.message; $('#error').hidden = false; }
+    }
+  }
+
+  async function cancelarClase(c) {
+    if (!confirm(`¿Cancelar la clase de ${c.nombre} a las ${c.hora}?`)) return;
+    try {
+      await api(`/api/profesor/clases/${c.id}/cancelar`, { method: 'PATCH' });
+      cargar();
+    } catch (e) {
+      $('#error').textContent = e.message; $('#error').hidden = false;
+    }
+  }
+
+  function irA(f) {
+    fecha = f;
+    $('#fecha').value = f;
+    cargar();
+  }
+
+  async function abrirAgenda() {
+    $('#login').hidden = true;
+    $('#agenda').hidden = false;
+    irA(fecha || hoy);
+    clearInterval(temporizador);
+    temporizador = setInterval(cargar, 60000);
+  }
+
+  $('#formLogin').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    pin = $('#pin').value.trim();
+    try {
+      await api('/api/profesor/clases?fecha=' + encodeURIComponent(hoy));
+      sessionStorage.setItem('pin', pin);
+      $('#pin').value = '';
+      abrirAgenda();
+    } catch (e) {
+      if (e.message !== 'PIN incorrecto') mostrarLogin(e.message);
+    }
+  });
+
+  $('#fecha').addEventListener('change', (e) => { if (e.target.value) irA(e.target.value); });
+  $('#hoy').addEventListener('click', () => irA(hoy));
+  $('#ayer').addEventListener('click', () => irA(sumarDias(fecha, -1)));
+  $('#manana').addEventListener('click', () => irA(sumarDias(fecha, 1)));
+  $('#salir').addEventListener('click', () => salir());
+
+  (async function iniciar() {
+    try {
+      const cfg = await (await fetch('/api/config')).json();
+      hoy = cfg.ahora.fecha;
+      fecha = hoy;
+    } catch (e) {
+      mostrarLogin('No se pudo conectar con el servidor.');
+      return;
+    }
+    if (pin) abrirAgenda(); else mostrarLogin();
+  })();
+})();
+</script>
+</body>
+</html>
